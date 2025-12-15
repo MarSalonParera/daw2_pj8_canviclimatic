@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ubicació i CO₂</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-geo">
+<div class="container">
+    <h2>Ubicació i emissions de CO₂</h2>
+    <p>
+    Aquesta pàgina utilitza fa l'estimació de les emissions de CO₂ segons la teva ubicació i 
+    l’entorn on et trobes. Pots indicar si el teu entorn és <strong>rural</strong>, 
+    <strong>suburbà</strong> o <strong>urbà</strong> per ajustar el càlcul.
+    </p>
+    <label for="entorn">Selecciona l'entorn:</label>
+    <select id="entorn">
+      <option value="rural">Rural</option>
+      <option value="suburba">Suburbà</option>
+      <option value="urba">Urbà</option>
+    </select>
+    <br>
+    <button id="obtenir">Obtenir ubicació</button>
+    <button id="esborrar">Esborrar ubicació guardada</button>
+    <div class="info" id="resultat">
+    Cap ubicació obtinguda encara.
+    </div>
+<script>
+const resultat = document.getElementById("resultat");
+
+// Funció per estimar emissions segons continent i entorn
+function estimarEmissions(lat, lon, entorn) {
+  let continent = "";
+
+  if (lat >= -35 && lat <= 70 && lon >= -10 && lon <= 40) continent = "Europa";
+  else if (lat >= 15 && lat <= 70 && lon >= -170 && lon <= -50) continent = "Amèrica del Nord";
+  else if (lat >= -60 && lat <= 15 && lon >= -80 && lon <= -30) continent = "Amèrica del Sud";
+  else if (lat >= 5 && lat <= 55 && lon >= 60 && lon <= 150) continent = "Àsia";
+  else if (lat >= -35 && lat <= 37 && lon >= -20 && lon <= 50) continent = "Àfrica";
+  else if (lat >= -50 && lat <= 0 && lon >= 110 && lon <= 180) continent = "Oceania";
+  else continent = "Altres";
+
+  // Emissions base per continent (kg CO₂/dia)
+  let base = {
+    "Europa": 10,
+    "Amèrica del Nord": 15,
+    "Amèrica del Sud": 7,
+    "Àsia": 12,
+    "Àfrica": 5,
+    "Oceania": 9,
+    "Altres": 8
+  }[continent];
+
+  // Ajust segons entorn
+  let ajust = { "rural": 0.8, "suburba": 1.0, "urba": 1.2 }[entorn];
+
+  return (base * ajust).toFixed(2);
+}
+
+// Mostrar ubicació guardada
+const ubicacioGuardada = localStorage.getItem("ubicacio");
+if (ubicacioGuardada) {
+  const u = JSON.parse(ubicacioGuardada);
+  const emissions = estimarEmissions(u.lat, u.lon, u.entorn);
+  resultat.innerHTML =
+    `<strong>Última ubicació guardada:</strong><br>
+     Latitud: ${u.lat}<br>
+     Longitud: ${u.lon}<br>
+     Entorn: ${u.entorn}<br>
+     Emissions aproximades: ${emissions} kg CO₂/dia`;
+}
+
+// Obtenir ubicació
+document.getElementById("obtenir").onclick = function () {
+  if (!navigator.geolocation) {
+    resultat.textContent = "La geolocalització no està disponible.";
+    return;
+  }
+
+  const entorn = document.getElementById("entorn").value;
+
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      const lat = pos.coords.latitude.toFixed(5);
+      const lon = pos.coords.longitude.toFixed(5);
+
+      const emissions = estimarEmissions(lat, lon, entorn);
+
+      const ubicacio = { lat, lon, entorn };
+      localStorage.setItem("ubicacio", JSON.stringify(ubicacio));
+
+      resultat.innerHTML =
+        `<strong>Ubicació actual:</strong><br>
+         Latitud: ${lat}<br>
+         Longitud: ${lon}<br>
+         Entorn: ${entorn}<br>
+         Emissions aproximades: ${emissions} kg CO₂/dia`;
+    },
+    function () {
+      resultat.textContent = "No s'ha pogut obtenir la ubicació.";
+    }
+  );
+};
+
+// Esborrar ubicació guardada
+document.getElementById("esborrar").onclick = function () {
+  localStorage.removeItem("ubicacio");
+  resultat.textContent = "Ubicació esborrada del navegador.";
+};
+</script>
+    <p style="margin-top: 20px;">
+      <a href="index.html">Tornar a l'índex</a>
+    </p>
+</div>
+</body>
+</html>

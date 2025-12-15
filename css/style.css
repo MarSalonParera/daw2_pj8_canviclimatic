@@ -1,0 +1,84 @@
+/* --- Estils Generals --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    width: 100%;
+}
+
+h1, h2, h3 {
+    color: #005f73;
+}
+
+a {
+    color: #0a9396;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+button, select {
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+button {
+    background-color: #005f73;
+    color: white;
+    border-color: #005f73;
+}
+
+button:hover {
+    background-color: #0a9396;
+}
+
+/* --- Estils per pàgina específica --- */
+
+/* Índex i Sobre Nosaltres */
+.page-index .container,
+.page-about .container {
+    max-width: 700px;
+}
+
+/* Geolocalització */
+.page-geo .container {
+    max-width: 800px;
+}
+.page-geo .info {
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #e9ecef;
+}
+
+/* Calculadora Canvas */
+.page-canvas .container {
+    max-width: 450px;
+}
+.page-canvas canvas {
+    border: 1px solid #000;
+    margin-top: 20px;
+}
+.page-canvas #esborrar {
+    cursor: grab;
+}
