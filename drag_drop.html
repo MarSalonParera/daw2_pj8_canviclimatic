@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classificació d'Emissions</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="pagina-joc">
+    <div class="contenidor">
+        <header>
+            <h1>Classifica elements relatius al CO₂</h1>
+            <p>Arrossega cada element al seu impacte climàtic corresponent.</p>
+        </header>
+        
+        <main>
+            <div id="missatge" class="missatge-feedback">Comença a classificar!</div>
+            <button id="reiniciar" style="display: none; margin-bottom: 20px;">🔄 Tornar a jugar</button>
+
+            <!-- Zona d'elements (Draggables) -->
+            <div class="contenidor-elements" id="llista-elements">
+                <div class="element-arrossegable" draggable="true" data-tipus="alta">🏭 Fàbrica</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="alta">✈️ Avió</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="alta">🚙 Cotxe Gasolina</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="nula">🚲 Bicicleta</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="nula">☀️ Placa Solar</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="nula">🌬️ Molí de Vent</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="nula">🚶 Caminar</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="absorcio">🌳 Arbre</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="absorcio">🪸 Algues marines</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="absorcio">🌱 Plantes</div>
+            </div>
+
+            <!-- Zona de contenidors (Dropzones) -->
+            <div class="contenidor-cubells">
+                <div class="cubell vermell" data-accepta="alta">Alta Emissió</div>
+                <div class="cubell groc" data-accepta="nula">Emissió Nul·la</div>
+                <div class="cubell verd" data-accepta="absorcio">Absorció de CO₂</div>
+            </div>
+        </main>
+
+        <footer>
+            <p style="margin-top: 20px;"><a href="INDEX_history.html">Tornar a l'índex</a></p>
+        </footer>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           API 3: DRAG AND DROP API
+           ========================================================================== */
+        const elements = document.querySelectorAll('.element-arrossegable');
+        const cubells = document.querySelectorAll('.cubell');
+        const missatge = document.getElementById('missatge');
+        const botoReiniciar = document.getElementById('reiniciar');
+
+        // 1. Configuració dels elements arrossegables
+        elements.forEach(element => {
+            element.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', e.target.dataset.tipus);
+                e.dataTransfer.effectAllowed = 'move';
+                e.target.classList.add('arrossegant');
+            });
+
+            element.addEventListener('dragend', (e) => {
+                e.target.classList.remove('arrossegant');
+            });
+        });
+
+        // 2. Configuració de les zones de destí (Contenidors)
+        cubells.forEach(cubell => {
+            cubell.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Necessari per permetre el drop
+                e.dataTransfer.dropEffect = 'move';
+                cubell.classList.add('sobre-arrossegament'); // Feedback visual
+            });
+
+            cubell.addEventListener('dragleave', () => {
+                cubell.classList.remove('sobre-arrossegament');
+            });
+
+            cubell.addEventListener('drop', (e) => {
+                e.preventDefault();
+                cubell.classList.remove('sobre-arrossegament');
+
+                const tipusResidu = e.dataTransfer.getData('text/plain');
+                const tipusContenidor = cubell.dataset.accepta;
+
+                // Validació de la lògica del joc
+                if (tipusResidu === tipusContenidor) {
+                    // Èxit
+                    missatge.textContent = "Correcte! ✅";
+                    missatge.style.color = "#2a9d8f";
+                    
+                    // Eliminem l'element arrossegat (simulant que està dins)
+                    const elementArrossegat = document.querySelector('.arrossegant');
+                    if (elementArrossegat) elementArrossegat.remove();
+
+                    // Comprovar victòria
+                    if (document.querySelectorAll('.element-arrossegable').length === 0) {
+                        missatge.textContent = "Felicitats! Has classificat tot correctament! 🌍";
+                        botoReiniciar.style.display = "inline-block";
+                    }
+                } else {
+                    // Error
+                    missatge.textContent = "Incorrecte! Aquest element no pertany a aquesta categoria. ❌";
+                    missatge.style.color = "#e76f51";
+                }
+            });
+        });
+
+        botoReiniciar.onclick = function() {
+            window.location.reload();
+        };
+    </script>
+</body>
+</html>
