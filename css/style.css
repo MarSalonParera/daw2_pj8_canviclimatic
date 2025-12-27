@@ -1,4 +1,6 @@
-/* --- Estils Generals --- */
+/* ==========================================================================
+   ESTILS GENERALS
+   ========================================================================== */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #f4f7f6;
@@ -52,15 +54,17 @@ button:hover {
     background-color: #0a9396;
 }
 
-/* --- Elements d'interfície (Tabs / Seccions) --- */
+/* ==========================================================================
+   ELEMENTS D'INTERFÍCIE (TABS / SECCIONS)
+   ========================================================================== */
 .navegacio-pestanyes { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
 .navegacio-pestanyes button { margin-right: 10px; }
 .contingut-seccio { display: none; }
 .contingut-seccio.actiu { display: block; }
 
-/* --- Estils per pàgina específica --- */
-
-/* Geolocalització */
+/* ==========================================================================
+   PÀGINA: GEOLOCALITZACIÓ
+   ========================================================================== */
 .pagina-geo .informacio {
     margin-top: 15px;
     padding: 10px;
@@ -80,13 +84,20 @@ button:hover {
     font-weight: bold;
 }
 
-/* Calculadora Canvas */
+/* ==========================================================================
+   PÀGINA: CALCULADORA CANVAS
+   ========================================================================== */
 .pagina-canvas canvas {
-    border: 1px solid #000;
+    border: none;
     margin-top: 20px;
+    background-color: #cffafa;
+    /* Cursor personalitzat'FORA CO2'*/
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><text x="0" y="25" font-family="Arial" font-size="20" font-weight="bold" fill="green">FORA CO2</text></svg>') 10 10, auto;
 }
 
-/* --- Estils per al Joc Drag & Drop --- */
+/* ==========================================================================
+   PÀGINA: JOC DRAG & DROP
+   ========================================================================== */
 .contenidor-elements {
     display: flex;
     gap: 10px;
@@ -125,7 +136,7 @@ button:hover {
 }
 
 .cubell {
-    width: 100px;
+    width: 150px;
     height: 120px;
     display: flex;
     align-items: center;
@@ -161,4 +172,42 @@ button:hover {
     height: 20px;
     margin-bottom: 10px;
     font-weight: bold;
+}
+
+/* ==========================================================================
+   PÀGINA: REPRODUCTOR DE VÍDEO
+   ========================================================================== */
+.contenidor-video { 
+    max-width: 100%; 
+    background: #000; 
+    padding: 10px; 
+    border-radius: 8px; 
+}
+
+video { 
+    width: 100%; 
+    display: block; 
+}
+
+.controls { 
+    margin-top: 10px; 
+    color: white; 
+}
+
+.fila-botons { 
+    display: flex; 
+    gap: 10px; 
+    align-items: center; 
+    margin-top: 5px; 
+}
+
+#barraProgres { 
+    width: 100%; 
+    cursor: pointer; 
+}
+
+.temps { 
+    font-family: monospace; 
+    font-size: 0.9em; 
+    margin-left: 10px; 
 }
