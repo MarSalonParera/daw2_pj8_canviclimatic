@@ -6,111 +6,181 @@
   <title>Ubicació i CO₂</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="page-geo">
-<div class="container">
-    <h2>Ubicació i emissions de CO₂</h2>
+<body class="pagina-geo">
+<div class="contenidor">
+    <h2>Emissions de CO₂ en ruta</h2>
     <p>
-    Aquesta pàgina utilitza fa l'estimació de les emissions de CO₂ segons la teva ubicació i 
-    l’entorn on et trobes. Pots indicar si el teu entorn és <strong>rural</strong>, 
-    <strong>suburbà</strong> o <strong>urbà</strong> per ajustar el càlcul.
+    Selecciona el teu mitjà de transport i comença a moure't. L'aplicació calcularà 
+    el CO₂ que estàs emetent (o estalviant) en temps real segons la distància recorreguda.
     </p>
-    <label for="entorn">Selecciona l'entorn:</label>
-    <select id="entorn">
-      <option value="rural">Rural</option>
-      <option value="suburba">Suburbà</option>
-      <option value="urba">Urbà</option>
+    <label for="transport">Mitjà de transport:</label>
+    <select id="transport">
+      <option value="0">Caminant / Bici (0 kg CO₂/km)</option>
+      <option value="0.103">Moto (0.103 kg CO₂/km)</option>
+      <option value="0.192">Cotxe (0.192 kg CO₂/km)</option>
+      <option value="0.105">Bus (0.105 kg CO₂/km)</option>
     </select>
     <br>
-    <button id="obtenir">Obtenir ubicació</button>
-    <button id="esborrar">Esborrar ubicació guardada</button>
-    <div class="info" id="resultat">
+    <button id="iniciar">Iniciar seguiment</button>
+    <button id="aturar" disabled>Aturar seguiment</button>
+    <button id="esborrar">Esborrar ruta</button>
+    <div class="informacio" id="resultat">
     Cap ubicació obtinguda encara.
     </div>
+
+    <!-- Instruccions visuals per a la Demo -->
+    <details>
+        <summary>ℹ️ Guia: Com simular moviment</summary>
+        <ol>
+            <li>Prem <strong>F12 o (Ctrl + Shift + i)</strong> per obrir les Eines de Desenvolupador.</li>
+            <li>Prem <strong>(Ctrl + Shift + P)</strong> per obrir el cercador d'ordres.</li>
+            <li>Escriu <strong>"Sensors"</strong> i selecciona l'opció <em>"Show Sensors"</em>.</li>
+            <li>A la pestanya nova que s'obre a baix, busca l'apartat <strong>"Location"</strong>.</li>
+            <li>Canvia la ciutat (ex: de "London" a "Moscow") i veuràs com augmenta la distància.</li>
+        </ol>
+    </details>
+
 <script>
-const resultat = document.getElementById("resultat");
+  const resultat = document.getElementById("resultat");
+  let idSeguiment = null;
+  let distanciaTotal = 0;
+  let co2Total = 0;
+  let ultimaLat = null;
+  let ultimaLon = null;
 
-// Funció per estimar emissions segons continent i entorn
-function estimarEmissions(lat, lon, entorn) {
-  let continent = "";
-
-  if (lat >= -35 && lat <= 70 && lon >= -10 && lon <= 40) continent = "Europa";
-  else if (lat >= 15 && lat <= 70 && lon >= -170 && lon <= -50) continent = "Amèrica del Nord";
-  else if (lat >= -60 && lat <= 15 && lon >= -80 && lon <= -30) continent = "Amèrica del Sud";
-  else if (lat >= 5 && lat <= 55 && lon >= 60 && lon <= 150) continent = "Àsia";
-  else if (lat >= -35 && lat <= 37 && lon >= -20 && lon <= 50) continent = "Àfrica";
-  else if (lat >= -50 && lat <= 0 && lon >= 110 && lon <= 180) continent = "Oceania";
-  else continent = "Altres";
-
-  // Emissions base per continent (kg CO₂/dia)
-  let base = {
-    "Europa": 10,
-    "Amèrica del Nord": 15,
-    "Amèrica del Sud": 7,
-    "Àsia": 12,
-    "Àfrica": 5,
-    "Oceania": 9,
-    "Altres": 8
-  }[continent];
-
-  // Ajust segons entorn
-  let ajust = { "rural": 0.8, "suburba": 1.0, "urba": 1.2 }[entorn];
-
-  return (base * ajust).toFixed(2);
+// Funció per calcular distància entre dos punts (Fórmula de Haversine)
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+  const radiTerraKm = 6371; // Radi de la Terra en km
+  const difLat = (lat2 - lat1) * Math.PI / 180;
+  const difLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(difLat/2) * Math.sin(difLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(difLon/2) * Math.sin(difLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return radiTerraKm * c; // Distància en km
 }
 
-// Mostrar ubicació guardada
+/* ==========================================================================
+   API 1: WEB STORAGE (localStorage - Recuperar)
+   ========================================================================== */
 const ubicacioGuardada = localStorage.getItem("ubicacio");
 if (ubicacioGuardada) {
-  const u = JSON.parse(ubicacioGuardada);
-  const emissions = estimarEmissions(u.lat, u.lon, u.entorn);
-  resultat.innerHTML =
-    `<strong>Última ubicació guardada:</strong><br>
-     Latitud: ${u.lat}<br>
-     Longitud: ${u.lon}<br>
-     Entorn: ${u.entorn}<br>
-     Emissions aproximades: ${emissions} kg CO₂/dia`;
+  try {
+    const u = JSON.parse(ubicacioGuardada);
+    resultat.innerHTML =
+      `<strong>Última sessió guardada:</strong><br>
+       Latitud: ${u.lat}<br>
+       Longitud: ${u.lon}<br>
+       Transport: ${u.textTransport}<br>
+       Distància: ${u.dist} km<br>
+       CO₂ Emès: ${u.co2} kg`;
+  } catch (e) {
+    console.error("Error llegint les dades guardades:", e);
+  }
 }
 
-// Obtenir ubicació
-document.getElementById("obtenir").onclick = function () {
+document.getElementById("iniciar").onclick = function () {
   if (!navigator.geolocation) {
     resultat.textContent = "La geolocalització no està disponible.";
     return;
   }
 
-  const entorn = document.getElementById("entorn").value;
+  // Reiniciem comptadors
+  distanciaTotal = 0;
+  co2Total = 0;
+  ultimaLat = null;
+  ultimaLon = null;
 
-  navigator.geolocation.getCurrentPosition(
+  document.getElementById("iniciar").disabled = true;
+  document.getElementById("aturar").disabled = false;
+  resultat.innerHTML = "Iniciant seguiment...";
+
+  /* ==========================================================================
+     API 2: GEOLOCATION API (watchPosition)
+     ========================================================================== */
+  idSeguiment = navigator.geolocation.watchPosition(
     function (pos) {
-      const lat = pos.coords.latitude.toFixed(5);
-      const lon = pos.coords.longitude.toFixed(5);
+      // Llegim el transport en temps real per si l'usuari el canvia durant la ruta
+      const selector = document.getElementById("transport");
+      const factorTransport = parseFloat(selector.value);
+      const textTransport = selector.options[selector.selectedIndex].text;
 
-      const emissions = estimarEmissions(lat, lon, entorn);
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
 
-      const ubicacio = { lat, lon, entorn };
+      let distanciaParcial = 0;
+      // Calcular distància si tenim un punt anterior
+      if (ultimaLat !== null && ultimaLon !== null) {
+        distanciaParcial = calcularDistancia(ultimaLat, ultimaLon, lat, lon);
+        distanciaTotal += distanciaParcial;
+        // Acumulem CO2: km recorreguts * factor del vehicle
+        co2Total += distanciaParcial * factorTransport;
+      }
+      ultimaLat = lat;
+      ultimaLon = lon;
+
+      /* ==========================================================================
+         API 1: WEB STORAGE (localStorage - Guardar)
+         ========================================================================== */
+      
+      // Guardem l'estat actual directament
+      const ubicacio = { lat, lon, textTransport, dist: distanciaTotal.toFixed(3), co2: co2Total.toFixed(3) };
       localStorage.setItem("ubicacio", JSON.stringify(ubicacio));
 
+      // Feedback visual segons si contamines o no
+      const colorCO2 = factorTransport > 0 ? "red" : "green";
+      
       resultat.innerHTML =
-        `<strong>Ubicació actual:</strong><br>
-         Latitud: ${lat}<br>
-         Longitud: ${lon}<br>
-         Entorn: ${entorn}<br>
-         Emissions aproximades: ${emissions} kg CO₂/dia`;
+        `<strong>Ubicació actual (Seguiment actiu):</strong><br>
+         Latitud: ${lat.toFixed(5)}<br>
+         Longitud: ${lon.toFixed(5)}<br>
+         <strong>Distància recorreguda: ${distanciaTotal.toFixed(3)} km</strong><br>
+         <span style="color: ${colorCO2}; font-weight: bold; font-size: 1.2em;">💨 CO₂ Acumulat: ${co2Total.toFixed(3)} kg</span>`;
     },
-    function () {
-      resultat.textContent = "No s'ha pogut obtenir la ubicació.";
+    function (error) {
+      // Gestió de tots els codis d'error
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          resultat.textContent = "Error: Permís denegat per l'usuari.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          resultat.textContent = "Error: La informació de la ubicació no està disponible.";
+          break;
+        case error.TIMEOUT:
+          resultat.textContent = "Error: La petició ha caducat (timeout).";
+          break;
+        default:
+          resultat.textContent = "Error desconegut: " + error.message;
+          break;
+      }
+      // Restablir botons
+      document.getElementById("iniciar").disabled = false;
+      document.getElementById("aturar").disabled = true;
     }
   );
 };
 
-// Esborrar ubicació guardada
+// Aturar seguiment
+document.getElementById("aturar").onclick = function () {
+  if (idSeguiment !== null) {
+    navigator.geolocation.clearWatch(idSeguiment);
+    idSeguiment = null;
+    resultat.innerHTML += "<br><strong>Seguiment aturat.</strong>";
+    document.getElementById("iniciar").disabled = false;
+    document.getElementById("aturar").disabled = true;
+  }
+};
+
+/* ==========================================================================
+   API 1: WEB STORAGE (localStorage - Esborrar)
+   ========================================================================== */
 document.getElementById("esborrar").onclick = function () {
-  localStorage.removeItem("ubicacio");
-  resultat.textContent = "Ubicació esborrada del navegador.";
+    localStorage.removeItem("ubicacio");
+    resultat.textContent = "Ubicació esborrada del navegador.";
 };
 </script>
     <p style="margin-top: 20px;">
-      <a href="index.html">Tornar a l'índex</a>
+      <a href="INDEX_history.html">Tornar a l'índex</a>
     </p>
 </div>
 </body>
