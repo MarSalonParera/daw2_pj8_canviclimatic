@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora d'emissions de CO₂</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="pagina-canvas">
+<div class="contenidor">
+    <h2>Calculadora d'emissions de CO₂</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 30px; align-items: flex-start;">
+    <div style="flex: 1; min-width: 280px;">
+    <h3>Transport</h3>
+    <select id="transport">
+      <option value="0">No faig servir transport</option>
+      <option value="0.1">Bicicleta (0.1 kg CO₂/dia)</option>
+      <option value="2">Autobús (2 kg CO₂/dia)</option>
+      <option value="5">Cotxe (5 kg CO₂/dia)</option>
+      <option value="10">Moto (10 kg CO₂/dia)</option>
+    </select>
+    <h3>Electricitat</h3>
+    <select id="electricitat">
+      <option value="1">Consum baix  (1 kg/dia)</option>
+      <option value="3">Consum mitjà (3 kg/dia)</option>
+      <option value="6">Consum alt (6 kg/dia)</option>
+    </select>
+    <h3>Dieta</h3>
+    <select id="dieta">
+      <option value="2">Vegetariana (2 kg/dia)</option>
+      <option value="4">Mixta (4 kg/dia)</option>
+      <option value="7">Carnívora (7 kg/dia)</option>
+    </select>
+    <h3>Reciclatge</h3>
+    <label><input type="checkbox" id="vidre"> Reciclar vidre (-0,25 kg/dia)</label><br>
+    <label><input type="checkbox" id="cartro"> Reciclar paper/cartró (-0,7 kg/dia)</label><br>
+    <label><input type="checkbox" id="plastic"> Reciclar plàstic (-1,2 kg/dia)</label><br>
+    <br><br>
+    <button id="calcular">Calcular</button>
+    <button id="esborrar">Esborrar càlcul</button>
+    </div>
+    
+    <div style="flex: 0 0 auto;">
+    <canvas id="canvas" width="400" height="450"></canvas>
+    </div>
+    </div>
+<script>
+/* ==========================================================================
+   API 1: WEB STORAGE (IndexedDB - Configuració)
+   ========================================================================== */
+let bd;
+const peticio = indexedDB.open("BD_Emissions_Personals", 1);
+let dadesActuals = []; // Guardem les dades per redibuixar
+
+peticio.onerror = function(e) {
+  console.error("Error obrint la base de dades IndexedDB:", e.target.error);
+};
+
+peticio.onupgradeneeded = function(e) {
+  bd = e.target.result;
+  bd.createObjectStore("resultats", { autoIncrement: true });
+};
+
+peticio.onsuccess = function(e) {
+  bd = e.target.result;
+  // Càrrega automàtica inicial (així no cal botó)
+  carregarDadesIGraficar();
+};
+
+/* ==========================================================================
+   2. Càlcul i Emmagatzematge
+   ========================================================================== */
+document.getElementById("calcular").onclick = function() {
+  if (!bd) {
+    console.warn("La base de dades encara no està llesta.");
+    return;
+  }
+
+  const t = Number(document.getElementById("transport").value);
+  const e = Number(document.getElementById("electricitat").value);
+  const d = Number(document.getElementById("dieta").value);
+  let r = 0;
+  if(document.getElementById("vidre").checked) r -= 0.25;
+  if(document.getElementById("cartro").checked) r -= 0.7;
+  if(document.getElementById("plastic").checked) r -= 1.2;
+
+  const total = (t + e + d + r).toFixed(2);  // kg CO₂/dia, arrodonit a 2 decimals
+
+  /* ==========================================================================
+     API 1: WEB STORAGE (IndexedDB - Guardar)
+     ========================================================================== */
+  const transaccio = bd.transaction("resultats", "readwrite");
+  
+  transaccio.onerror = function(event) {
+    console.error("Error en la transacció:", event.target.error);
+    if (event.target.error.name === 'QuotaExceededError') {
+      alert("Error: No hi ha espai suficient per guardar el resultat a la base de dades.");
+    }
+  };
+
+  const magatzem = transaccio.objectStore("resultats");
+  magatzem.add({ data: new Date(), total });
+
+  transaccio.oncomplete = function() {
+    // Quan s'hagi guardat, actualitzem el gràfic amb les últimes dades
+    carregarDadesIGraficar();
+  };
+};
+
+/* ==========================================================================
+   API 1: WEB STORAGE (IndexedDB - Esborrar)
+   ========================================================================== */
+function esborrarUltimCalcul() {
+  const transaccio = bd.transaction("resultats", "readwrite");
+  const magatzem = transaccio.objectStore("resultats");
+  magatzem.clear();
+  dadesActuals = [];
+  dibuixarEscena(); // Neteja el canvas
+}
+
+/* ==========================================================================
+   API 1: WEB STORAGE (IndexedDB - Llegir)
+   ========================================================================== */
+function carregarDadesIGraficar() {
+  const transaccio = bd.transaction("resultats", "readonly");
+  const magatzem = transaccio.objectStore("resultats");
+  const peticioDades = magatzem.getAll();
+  peticioDades.onsuccess = function() {
+    // Agafem NOMÉS l'últim registre per dibuixar la Terra actual
+    const dades = peticioDades.result;
+    if (dades.length > 0) {
+      dadesActuals = [dades[dades.length - 1]]; 
+    } else {
+      dadesActuals = [];
+    }
+    iniciarAnimacio();
+  };
+}
+
+// Esborrar l'últim càlcul
+document.getElementById("esborrar").onclick = function() {
+  esborrarUltimCalcul();
+};
+
+const canvas = document.getElementById("canvas");
+
+/* ==========================================================================
+   API 4: CANVAS API (Animacions i Interactivitat)
+   ========================================================================== */
+let angleRotacio = 0;
+let ratoliX = 0, ratoliY = 0;
+let co2Netejat = 0;
+let estaSobre = false;
+let idAnimacio = null;
+
+function iniciarAnimacio() {
+  if (idAnimacio) cancelAnimationFrame(idAnimacio);
+  angleRotacio = 0;
+  co2Netejat = 0;
+  
+  function bucle() {
+    angleRotacio += 0.01; // Velocitat de rotació constant
+    dibuixarEscena();
+    idAnimacio = requestAnimationFrame(bucle);
+  }
+  bucle();
+}
+
+function dibuixarEscena() {
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // 1. Fons
+  ctx.clearRect(0, 0, W, H);
+
+  if (dadesActuals.length === 0) {    
+    ctx.fillText("Sense dades. Fes un càlcul!", W / 2, H / 2);
+    return;
+  }
+
+  // 2. Dibuixar la Terra (Només l'última dada)
+  const d = dadesActuals[0];
+  // Interactivitat: Restem el CO2 netejat amb el ratolí (sense baixar de 0)
+  const valor = Math.max(0, parseFloat(d.total) - co2Netejat);
+  
+  const centreX = W / 2;
+  const centreY = H / 2;
+  const radi = 80;
+
+  // --- ÚS DE TRANSFORMACIONS (Translate + Rotate) ---
+
+  ctx.save();
+  ctx.translate(centreX, centreY);
+  ctx.rotate(angleRotacio);
+
+  // Planeta (Base) - Dibuixem al voltant de 0,0
+  ctx.beginPath();
+  ctx.arc(0, 0, radi, 0, Math.PI * 2);
+  ctx.fillStyle = "#4B9CD3"; // Blau mar
+  ctx.fill();
+
+  // Continents (Decoració simple)
+  ctx.fillStyle = "#55A630"; // Verd terra
+  ctx.beginPath(); ctx.arc(-30, -20, 30, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(40, 10, 20, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(10, 50, 15, 0, Math.PI * 2); ctx.fill();
+
+  ctx.restore(); // Restaurem coordenades originals
+
+  // 3. Atmosfera de CO2
+  // Com més CO2, més opaca i gris/vermella és l'atmosfera
+  const refMax = 15; 
+  const opacitat = Math.min((valor / refMax), 0.9);
+  
+  // Interactivitat: Esborrar CO2 si el ratolí està sobre l'atmosfera
+  if (estaSobre) {
+      const dx = ratoliX - centreX;
+      const dy = ratoliY - centreY;
+      if (dx*dx + dy*dy < (radi + 20)*(radi + 20)) {
+          co2Netejat += 0.05; // Neteja contínua sense moure el ratolí
+      }
+  }
+  
+  ctx.beginPath();
+  ctx.arc(centreX, centreY, radi + 10, 0, Math.PI * 2);
+  
+  // Color: Verdós si és baix, Gris/Negre si és alt
+  if (valor < 5) {
+      ctx.fillStyle = `rgba(200, 255, 200, ${opacitat * 0.5})`; // Aura neta
+  } else {
+      ctx.fillStyle = `rgba(80, 80, 80, ${opacitat})`; // Boira tòxica
+  }
+  ctx.fill();
+
+  // 4. Text informatiu
+  ctx.fillStyle = "#000";
+  ctx.font = "bold 16px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(`${valor} kg CO₂/dia`, centreX, centreY + radi + 40);
+  
+  const estat = valor < 5 ? "Aire Net 🌿" : (valor < 10 ? "Contaminació Moderada ☁️" : "Nivell Crític! 🏭");
+  ctx.font = "14px Arial";
+  ctx.fillText(estat, centreX, centreY + radi + 60);
+}
+
+canvas.addEventListener("mousemove", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  ratoliX = e.clientX - rect.left;
+  ratoliY = e.clientY - rect.top;
+  estaSobre = true;
+});
+
+canvas.addEventListener("mouseleave", () => {
+  estaSobre = false;
+});
+</script>
+    <p style="margin-top: 20px;">
+      <a href="INDEX_history.html">Tornar a l'índex</a>
+    </p>
+</div>
+</body>
+</html>
