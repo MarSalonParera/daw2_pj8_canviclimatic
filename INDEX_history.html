@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+
+    <title>Canvi Climàtic - Índex</title>
+</head>
+<body class="pagina-inici">
+    <div class="contenidor">
+        <h1>Projecte sobre les emissions de CO₂</h1>
+        
+        <!-- Navegació SPA (History API) -->
+        <nav class="navegacio-pestanyes">
+            <button onclick="navegar('inici')">Inici</button>
+            <button onclick="navegar('intro')">Introducció al projecte</button>
+        </nav>
+
+        <!-- SECCIÓ 1: MENÚ D'EXERCICIS -->
+        <section id="sec-inici" class="contingut-seccio actiu">
+            <p>Benvingut al projecte sobre el canvi climàtic. Selecciona una eina:</p>
+            <ul>
+                <li><a href="geolocation+webstorage.html">1. Emissions de CO₂ en ruta</a></li>
+                <li><a href="canvas+indexedDB.html">2. Calculadora d'emissions de CO₂</a></li>
+                <li><a href="video.html">3. Vídeo Educatiu</a></li>
+                <li><a href="drag_drop.html">4. Classificació d'elements relatius a les emissions de CO₂</a></li>
+            </ul>
+        </section>
+
+        <!-- SECCIÓ 2: INTRODUCCIÓ CO2 -->
+        <section id="sec-intro" class="contingut-seccio">
+            <h2>Introducció a les emissions de CO₂</h2>
+            <p>El diòxid de carboni (CO₂) és el principal gas d'efecte hivernacle que contribueix a l'escalfament global. Les activitats humanes, com la crema de combustibles fòssils i la desforestació, han augmentat dràsticament la seva concentració a l'atmosfera.</p>
+            <p>Aquest projecte ofereix eines interactives per entendre, calcular i visualitzar l'impacte de les nostres accions diàries en el medi ambient.</p>
+        </section>
+    </div>
+
+    <script>
+        // --- API 7: HISTORY API ---
+        
+        function navegar(seccio) {
+            // Canviem la URL sense recarregar la pàgina
+            history.pushState({ seccio: seccio }, "", "?seccio=" + seccio);
+            mostrarSeccio(seccio);
+        }
+
+        function mostrarSeccio(seccio) {
+            document.querySelectorAll('.contingut-seccio').forEach(el => el.classList.remove('actiu'));
+            document.getElementById('sec-' + seccio).classList.add('actiu');
+        }
+
+        // Gestió del botó "Enrere" del navegador
+        window.onpopstate = function(event) {
+            const seccio = (event.state && event.state.seccio) ? event.state.seccio : 'inici';
+            mostrarSeccio(seccio);
+        };
+
+        // Càrrega inicial
+        const params = new URLSearchParams(window.location.search);
+        mostrarSeccio(params.get('seccio') || 'inici');
+    </script>
+</body>
+</html>

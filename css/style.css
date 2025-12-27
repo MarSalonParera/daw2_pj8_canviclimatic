@@ -11,12 +11,13 @@ body {
     min-height: 100vh;
 }
 
-.container {
+.contenidor {
     background-color: #ffffff;
     padding: 25px 30px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     width: 100%;
+    max-width: 800px;
 }
 
 h1, h2, h3 {
@@ -51,34 +52,113 @@ button:hover {
     background-color: #0a9396;
 }
 
+/* --- Elements d'interfície (Tabs / Seccions) --- */
+.navegacio-pestanyes { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+.navegacio-pestanyes button { margin-right: 10px; }
+.contingut-seccio { display: none; }
+.contingut-seccio.actiu { display: block; }
+
 /* --- Estils per pàgina específica --- */
 
-/* Índex i Sobre Nosaltres */
-.page-index .container,
-.page-about .container {
-    max-width: 700px;
-}
-
 /* Geolocalització */
-.page-geo .container {
-    max-width: 800px;
-}
-.page-geo .info {
+.pagina-geo .informacio {
     margin-top: 15px;
     padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #e9ecef;
+    background-color: #eee;
+}
+
+.pagina-geo details {
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+.pagina-geo summary {
+    cursor: pointer;
+    font-weight: bold;
 }
 
 /* Calculadora Canvas */
-.page-canvas .container {
-    max-width: 450px;
-}
-.page-canvas canvas {
+.pagina-canvas canvas {
     border: 1px solid #000;
     margin-top: 20px;
 }
-.page-canvas #esborrar {
+
+/* --- Estils per al Joc Drag & Drop --- */
+.contenidor-elements {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    min-height: 60px;
+}
+
+.element-arrossegable {
+    padding: 10px 15px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
     cursor: grab;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.element-arrossegable:active {
+    cursor: grabbing;
+}
+
+.element-arrossegable.arrossegant {
+    opacity: 0.5;
+    transform: scale(0.9);
+}
+
+.contenidor-cubells {
+    display: flex;
+    gap: 15px;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.cubell {
+    width: 100px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* Colors dels contenidors */
+.cubell.blau { background-color: #0077b6; }
+.cubell.groc { background-color: #ffb703; color: #333; }
+.cubell.verd { background-color: #55a630; }
+.cubell.marro { background-color: #6f4e37; }
+.cubell.vermell { background-color: #d90429; }
+
+/* Feedback visual quan s'arrossega a sobre */
+.cubell.sobre-arrossegament {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    border: 3px dashed #fff;
+}
+
+.marcador {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.missatge-feedback {
+    height: 20px;
+    margin-bottom: 10px;
+    font-weight: bold;
 }
