@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vídeo Educatiu</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="pagina-media">
+    <div class="contenidor">
+        <header>
+            <h1>Vídeo Educatiu</h1>
+        </header>
+        <main>
+            <div class="contenidor-video">
+                <!-- Afegim 'muted' per utilitzar l'àudio extern (API Audio) -->
+                <video id="elVideo" src="media/CO2-canvi-climatic.mp4" muted>
+                    El teu navegador no suporta video HTML5.
+                    <!-- Subtítols WebVTT -->
+                    <track id="trackSubtitols" label="Català" kind="subtitles" srclang="ca" src="media/subtitols.vtt" default>
+                </video>
+                <!-- API d'Àudio -->
+                <audio id="elAudio" src="media/best-dramatic-music.mp3"></audio>
+                <!-- Barra de Progrés -->
+                <div class="controls">
+                    <input type="range" id="barraProgres" min="0" value="0" step="0.1">
+                    <div class="fila-botons">
+                        <button id="botoReproduirPausar">Reprodueix</button>
+                        <button id="botoAturar">Atura</button>
+                        <span class="temps" id="textTemps">00:00 / 00:00</span>
+                        <button id="botoSilenciar" style="margin-left: auto;">Silencia</button>
+                        <input type="range" id="volum" min="0" max="1" step="0.1" value="1" style="width: 80px;">
+                    </div>
+                </div>
+            </div>
+            <p>Utilitza els controls personalitzats per interactuar amb el vídeo.</p>
+        </main>
+        <footer>
+            <p style="margin-top: 20px;"><a href="INDEX_history.html">Tornar a l'índex</a></p>
+        </footer>
+    </div>
+    <script>
+        /* ==========================================================================
+           API 8: VIDEO/AUDIO API
+           ========================================================================== */
+        const video = document.getElementById('elVideo');
+        const audio = document.getElementById('elAudio');
+        const track = document.getElementById('trackSubtitols');
+        const botoReproduirPausar = document.getElementById('botoReproduirPausar');
+        const botoAturar = document.getElementById('botoAturar');
+        const botoSilenciar = document.getElementById('botoSilenciar');
+        const volum = document.getElementById('volum');
+        const barraProgres = document.getElementById('barraProgres');
+        const textTemps = document.getElementById('textTemps');
+
+        // Configurar velocitat de reproducció (0.5 = meitat de velocitat, durada doble)
+        video.playbackRate = 0.5;
+
+        // Funció auxiliar per formatejar temps (MM:SS)
+        const formatejarTemps = (segons) => {
+            const m = Math.floor(segons / 60);
+            const s = Math.floor(segons % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        };
+
+        // 1. Controls de Reproducció (Play/Pause)
+        botoReproduirPausar.onclick = () => {
+            if (video.paused) {
+                video.play();
+                audio.play(); 
+                botoReproduirPausar.textContent = "Pausa";
+            } else {
+                video.pause();
+                audio.pause();
+                botoReproduirPausar.textContent = "Reprodueix";
+            }
+        };
+
+        // 2. Control d'Aturada (Stop)
+        botoAturar.onclick = () => {
+            video.pause();
+            audio.pause();
+            video.currentTime = 0;
+            audio.currentTime = 0;
+            botoReproduirPausar.textContent = "Reprodueix";
+        };
+
+        // 3. Gestió del So (Mute) - Ara controlem l'element <audio>
+        botoSilenciar.onclick = () => {
+            audio.muted = !audio.muted;
+            botoSilenciar.textContent = audio.muted ? "Activa so" : "Silencia";
+        };
+
+        // 4. Gestió del Volum - Ara controlem l'element <audio>
+        volum.oninput = (e) => audio.volume = e.target.value;
+
+        // 5. Actualització de la Barra de Progrés (Timeline)
+        video.addEventListener('timeupdate', () => {
+            const tempsActual = video.currentTime;
+            const duradaTotal = video.duration || 0;
+            
+            // Actualitzar barra
+            barraProgres.value = (tempsActual / duradaTotal) * 100;
+            
+            textTemps.textContent = `${formatejarTemps(tempsActual)} / ${formatejarTemps(duradaTotal)}`;
+        });
+
+        // 6. Inicialització de metadades (mostrar durada total abans de reproduir)
+        video.addEventListener('loadedmetadata', () => {
+            textTemps.textContent = `00:00 / ${formatejarTemps(video.duration)}`;
+        });
+
+        // 7. Interactivitat de la Barra (Seek)
+        barraProgres.addEventListener('input', (e) => {
+            const temps = (e.target.value / 100) * video.duration;
+            video.currentTime = temps;
+        });
+
+        // 8. Gestió d'errors
+        video.addEventListener('error', (e) => {
+            console.error("Error reproduint el vídeo:", video.error);
+        });
+
+        // 9. Gestió del final del vídeo
+        video.addEventListener('ended', () => {
+            audio.pause();
+            audio.currentTime = 0;
+            botoReproduirPausar.textContent = "Reprodueix";
+        });
+    </script>
+</body>
+</html>
