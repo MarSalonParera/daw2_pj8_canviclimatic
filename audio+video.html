@@ -14,7 +14,8 @@
         <main>
             <div class="contenidor-video">
                 <!-- Afegim 'muted' per utilitzar l'àudio extern (API Audio) -->
-                <video id="elVideo" src="media/CO2-canvi-climatic.mp4" muted>
+                <video id="elVideo" muted>
+                    <source src="media/CO2-canvi-climatic.mp4" type="video/mp4">
                     El teu navegador no suporta video HTML5.
                     <!-- Subtítols WebVTT -->
                     <track id="trackSubtitols" label="Català" kind="subtitles" srclang="ca" src="media/subtitols.vtt" default>
