@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APIs 5 i 6: Web Worker i File API</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="pagina-canvas">
+<div class="contenidor">
+
+<header>
+    <h1>APIs 5 i 6: Web Worker i File API</h1>
+    <p>Simulador informatiu sobre l'<strong>impacte del CO₂</strong></p>
+</header>
+
+<main>
+
+<!-- ===================== -->
+<!-- API 6: FILE API -->
+<!-- ===================== -->
+<section style="background:#e3f2fd; padding:15px; border-radius:8px; margin-bottom:20px;">
+    <h3>API 6: File API</h3>
+    <label for="inputFons">Puja una imatge:</label><br>
+    <input type="file" id="inputFons" accept="image/*" style="margin-top:10px;">
+    <p id="missatgeArxiu"></p>
+</section>
+
+<!-- ===================== -->
+<!-- API 5: WEB WORKER -->
+<!-- ===================== -->
+<section style="background:#f1f8e9; padding:15px; border-radius:8px;">
+    <h3>API 5: Web Worker</h3>
+
+    <p>
+        El diòxid de carboni (CO₂) és un gas present de manera natural a l’atmosfera.
+        Un excés de CO₂ pot tenir efectes negatius sobre la salut i el medi ambient.
+    </p>
+
+    <button onclick="iniciarWorker()">Carregar informació sobre CO₂</button>
+
+    <div id="infoCO2" style="margin-top:10px;"></div>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ==============================
+   API 6: FILE API (sense límit de mida)
+   ============================== */
+const inputFons = document.getElementById("inputFons");
+const missatgeArxiu = document.getElementById("missatgeArxiu");
+
+inputFons.addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validació només de tipus
+    if (!file.type.startsWith("image/")) {
+        alert("L'arxiu ha de ser una imatge.");
+        inputFons.value = "";
+        return;
+    }
+
+    missatgeArxiu.textContent = `Imatge carregada correctament: ${file.name}`;
+    missatgeArxiu.style.color = "green";
+});
+
+/* ==============================
+   API 5: WEB WORKER
+   ============================== */
+let worker;
+
+function iniciarWorker() {
+    if (!worker) {
+        worker = new Worker("worker.js");
+
+        worker.onmessage = function(e) {
+            const p = document.createElement("p");
+            p.textContent = e.data;
+            document.getElementById("infoCO2").appendChild(p);
+        };
+
+        worker.onerror = function() {
+            alert("Error amb el Web Worker. Assegura't d'usar Live Server.");
+        };
+    }
+}
+</script>
+
+</body>
+</html>
