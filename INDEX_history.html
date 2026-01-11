@@ -11,7 +11,7 @@
     <div class="contenidor">
         <h1>Projecte sobre les emissions de CO₂</h1>
         
-        <!-- Navegació SPA (History API) -->
+        <!-- Navegació en una sola pàgina (History API) -->
         <nav class="navegacio-pestanyes">
             <button onclick="navegar('inici')">Inici</button>
             <button onclick="navegar('intro')">Introducció al projecte</button>
@@ -23,8 +23,9 @@
             <ul>
                 <li><a href="geolocation+webstorage.html">1. Emissions de CO₂ en ruta</a></li>
                 <li><a href="canvas+indexedDB.html">2. Calculadora d'emissions de CO₂</a></li>
-                <li><a href="audio+video.html">3. Vídeo Educatiu</a></li>
+                <li><a href="audio+video.html">3. Vídeo educatiu</a></li>
                 <li><a href="drag_drop.html">4. Classifica elements relatius al CO₂</a></li>
+                <li><a href="file+webworker.html">5. Simulador: L'efecte de la contaminació</a></li>
             </ul>
         </section>
 
@@ -40,7 +41,7 @@
 
 /* ==========================================================================
            API 7: HISTORY API (SPA Navigation)
-           ========================================================================== */
+========================================================================== */
         
         function navegar(seccio) {
             // Canviem la URL sense recarregar la pàgina
