@@ -15,7 +15,7 @@
 
         <main>
             <div class="zona-pujada">
-                <h3>1. Selecciona una imatge del teu ordinador</h3>
+                <h3>Selecciona una imatge del teu ordinador</h3>
                 <!-- API FILE: Element natiu per pujar fitxers. -->
                 <!-- 'accept="image/*"' filtra perquè l'usuari només vegi imatges al cercador -->
                 <input type="file" id="selectorFoto" accept="image/*">
@@ -61,6 +61,11 @@
                 const dadesImatgeModificada = e.data;
                 contextResultat.putImageData(dadesImatgeModificada, 0, 0);
             };
+
+            // Gestió d'errors per garantir robustesa
+            workerImatge.onerror = function(e) {
+                console.error("Error al Web Worker:", e.message, "a la línia", e.lineno);
+            };
         }
 
         /* ==========================================================================
@@ -71,6 +76,21 @@
             // Accedim al primer arxiu de la llista (files[0])
             const arxiu = e.target.files[0];
             if (!arxiu) return;
+
+            // --- VALIDACIÓ AVANÇADA (Tipus i Mida) ---
+            // 1. Validar tipus MIME
+            const tipusPermesos = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!tipusPermesos.includes(arxiu.type)) {
+                alert("Error: Format no suportat. Si us plau, puja una imatge JPG, PNG o WebP.");
+                return;
+            }
+
+            // 2. Validar mida (ex: Màxim 5MB)
+            const midaMaxima = 5 * 1024 * 1024; // 5MB en bytes
+            if (arxiu.size > midaMaxima) {
+                alert("Error: L'arxiu és massa gran. El màxim permès són 5MB.");
+                return;
+            }
 
             // Mostrem la zona de resultats
             zonaResultats.style.display = 'flex';

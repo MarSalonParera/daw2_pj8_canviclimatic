@@ -40,7 +40,7 @@
     <script>
 
 /* ==========================================================================
-           API 7: HISTORY API (SPA Navigation)
+           API 7: HISTORY API (SPA Navigation= Aplicació d'una Sola Pàgina)
 ========================================================================== */
         
         function navegar(seccio) {
@@ -62,7 +62,12 @@
 
         // Càrrega inicial
         const params = new URLSearchParams(window.location.search);
-        mostrarSeccio(params.get('seccio') || 'inici');
+        const seccioInicial = params.get('seccio') || 'inici';
+
+        // Ús de replaceState per establir l'estat inicial correctament (vital per al botó Enrere)
+        history.replaceState({ seccio: seccioInicial }, "", "?seccio=" + seccioInicial);
+        
+        mostrarSeccio(seccioInicial);
     </script>
 </body>
 </html>
