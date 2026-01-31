@@ -1,187 +1,149 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ubicació i CO₂</title>
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cercador de Contaminació</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- OpenLayers (Mapa) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
+    <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
 </head>
 <body class="pagina-geo">
-<div class="contenidor">
-    <h2>Emissions de CO₂ en ruta</h2>
-    <p>
-    Selecciona el teu mitjà de transport i comença a moure't. L'aplicació calcularà 
-    el CO₂ que estàs emetent (o estalviant) en temps real segons la distància recorreguda.
-    </p>
-    <label for="transport">Mitjà de transport:</label>
-    <select id="transport">
-      <option value="0">Caminant / Bici (0 kg CO₂/km)</option>
-      <option value="0.103">Moto (0.103 kg CO₂/km)</option>
-      <option value="0.192">Cotxe (0.192 kg CO₂/km)</option>
-      <option value="0.105">Bus (0.105 kg CO₂/km)</option>
-    </select>
-    <br>
-    <button id="iniciar">Iniciar seguiment</button>
-    <button id="aturar" disabled>Aturar seguiment</button>
-    <button id="esborrar">Esborrar ruta</button>
-    <div class="informacio" id="resultat">
-    Cap ubicació obtinguda encara.
+    <div class="contenidor">
+        <header>
+            <h2>🌍 Qualitat de l'aire en temps real</h2>
+        </header>
+        <main>
+            <div class="informacio">
+                <p>Analitzem dos gasos clau com a indicadors de combustió (ja que el CO₂ és global i no es monitora en temps real a les ciutats):</p>
+                <ul class="llista-explicacio">
+                    <li><strong>Diòxid de Nitrogen (NO₂):</strong> Indicador de combustió de combustibles fòssils a alta temperatura (trànsit, indústria).</li>
+                    <li><strong>Monòxid de Carboni (CO):</strong> Resultat de la combustió incompleta (vehicles, biomassa). És un gas tòxic en altes concentracions.</li>
+                    <li><em>* Les dades es mostren en μg/m³ (micrograms per metre cúbic).</em></li>
+                </ul>
+            </div>
+            <p>Escriu el nom d'una regió per consultar la qualitat de l'aire en temps real.</p>
+            <!-- Cercador -->
+            <div class="cercador-wrapper">
+                <input type="text" id="input-ciutat" placeholder="nom d'un país o localitat" class="input-ciutat">
+                <button id="btn-cercar" class="btn-no-margin">🔍 Cercar</button>
+            </div>
+
+            <!-- Resultats -->
+            <div id="resultats" class="caixa-resultats">
+                <h3>Qualitat de l'aire a: <span id="nom-ciutat" class="titol-resultats">-</span></h3>
+                
+                <div class="layout-dades">
+                    <div class="col-dades">
+                        <p>🚗 <strong>NO₂:</strong> <span id="val-no2">-</span> μg/m³ <span id="nivell-no2"></span></p>
+                        <p>🔥 <strong>CO:</strong> <span id="val-co">-</span> μg/m³ <span id="nivell-co"></span></p>
+                    </div>
+                </div>
+                <p class="nota-peu">📡 Dades en temps real de l'API Open-Meteo</p>
+            </div>
+
+            <div id="mapa" class="mapa-cercador"></div>
+        </main>
+
+        <footer>
+            <p class="marge-top-20"><a href="INDEX_history.html">Tornar a l'índex</a></p>
+        </footer>
     </div>
 
-    <!-- Instruccions visuals per a la Demo -->
-    <details>
-        <summary>ℹ️ Guia: Com simular moviment</summary>
-        <ol>
-            <li>Prem <strong>F12 o (Ctrl + Shift + i)</strong> per obrir les Eines de Desenvolupador.</li>
-            <li>Prem <strong>(Ctrl + Shift + P)</strong> per obrir el cercador d'ordres.</li>
-            <li>Escriu <strong>"Sensors"</strong> i selecciona l'opció <em>"Show Sensors"</em>.</li>
-            <li>A la pestanya nova que s'obre a baix, busca l'apartat <strong>"Location"</strong>.</li>
-            <li>Canvia la ciutat (ex: de "London" a "Moscow") i veuràs com augmenta la distància.</li>
-        </ol>
-    </details>
+    <script>
+        let map, view, markerLayer;
 
-<script>
-  const resultat = document.getElementById("resultat");
-  let idSeguiment = null;
-  let distanciaTotal = 0;
-  let co2Total = 0;
-  let ultimaLat = null;
-  let ultimaLon = null;
+        function iniciar() {
+            // 1. Inicialitzar Mapa
+            view = new ol.View({
+                center: ol.proj.fromLonLat([0, 20]), 
+                zoom: 2
+            });
 
-// Funció per calcular distància entre dos punts (Fórmula de Haversine)
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  const radiTerraKm = 6371; // Radi de la Terra en km
-  const difLat = (lat2 - lat1) * Math.PI / 180;
-  const difLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(difLat/2) * Math.sin(difLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(difLon/2) * Math.sin(difLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return radiTerraKm * c; // Distància en km
-}
+            map = new ol.Map({
+                layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+                target: 'mapa',
+                view: view
+            });
 
-/* ==========================================================================
-   API 1: WEB STORAGE (localStorage - Recuperar)
-   ========================================================================== */
-const ubicacioGuardada = localStorage.getItem("ubicacio");
-if (ubicacioGuardada) {
-  try {
-    const u = JSON.parse(ubicacioGuardada);
-    resultat.innerHTML =
-      `<strong>Última sessió guardada:</strong><br>
-       Latitud: ${u.lat}<br>
-       Longitud: ${u.lon}<br>
-       Transport: ${u.textTransport}<br>
-       Distància: ${u.dist} km<br>
-       CO₂ Emès: ${u.co2} kg`;
-  } catch (e) {
-    console.error("Error llegint les dades guardades:", e);
-  }
-}
+            // 2. Event Cercar
+            document.getElementById('btn-cercar').addEventListener('click', cercarCiutat);
+        }
 
-document.getElementById("iniciar").onclick = function () {
-  if (!navigator.geolocation) {
-    resultat.textContent = "La geolocalització no està disponible.";
-    return;
-  }
+        async function cercarCiutat() {
+            const input = document.getElementById('input-ciutat');
+            const ciutat = input.value;
+            if (!ciutat) return;
 
-  // Reiniciem comptadors
-  distanciaTotal = 0;
-  co2Total = 0;
-  ultimaLat = null;
-  ultimaLon = null;
+            document.getElementById('btn-cercar').textContent = "⏳ Cercant...";
+            
+            try {
+                // PAS 1: Geocoding (Obtenir coordenades del nom) - API Nominatim
+                const respGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${ciutat}`);
+                const dataGeo = await respGeo.json();
 
-  document.getElementById("iniciar").disabled = true;
-  document.getElementById("aturar").disabled = false;
-  resultat.innerHTML = "Iniciant seguiment...";
+                if (dataGeo.length === 0) throw new Error("Ciutat no trobada");
 
-  /* ==========================================================================
-     API 2: GEOLOCATION API (watchPosition)
-     ========================================================================== */
-  idSeguiment = navigator.geolocation.watchPosition(
-    function (pos) {
-      // Llegim el transport en temps real per si l'usuari el canvia durant la ruta
-      const selector = document.getElementById("transport");
-      const factorTransport = parseFloat(selector.value);
-      const textTransport = selector.options[selector.selectedIndex].text;
+                const lat = parseFloat(dataGeo[0].lat);
+                const lon = parseFloat(dataGeo[0].lon);
+                const nomTrobat = dataGeo[0].display_name.split(',')[0]; // Agafem només la primera part del nom
 
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
+                // PAS 2: Dades Contaminació - API Open-Meteo
+                const respAir = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=nitrogen_dioxide,carbon_monoxide`);
+                const dataAir = await respAir.json();
 
-      let distanciaParcial = 0;
-      // Calcular distància si tenim un punt anterior
-      if (ultimaLat !== null && ultimaLon !== null) {
-        distanciaParcial = calcularDistancia(ultimaLat, ultimaLon, lat, lon);
-        distanciaTotal += distanciaParcial;
-        // Acumulem CO2: km recorreguts * factor del vehicle
-        co2Total += distanciaParcial * factorTransport;
-      }
-      ultimaLat = lat;
-      ultimaLon = lon;
+                mostrarResultats(nomTrobat, lat, lon, dataAir.current);
 
-      /* ==========================================================================
-         API 1: WEB STORAGE (localStorage - Guardar)
-         ========================================================================== */
-      
-      // Guardem l'estat actual directament
-      const ubicacio = { lat, lon, textTransport, dist: distanciaTotal.toFixed(3), co2: co2Total.toFixed(3) };
-      localStorage.setItem("ubicacio", JSON.stringify(ubicacio));
+            } catch (error) {
+                alert("Error: " + error.message);
+            } finally {
+                document.getElementById('btn-cercar').textContent = "🔍 Cercar";
+            }
+        }
 
-      // Feedback visual segons si contamines o no
-      const colorCO2 = factorTransport > 0 ? "red" : "green";
-      
-      resultat.innerHTML =
-        `<strong>Ubicació actual (Seguiment actiu):</strong><br>
-         Latitud: ${lat.toFixed(5)}<br>
-         Longitud: ${lon.toFixed(5)}<br>
-         <strong>Distància recorreguda: ${distanciaTotal.toFixed(3)} km</strong><br>
-         <span style="color: ${colorCO2}; font-weight: bold; font-size: 1.2em;">💨 CO₂ Acumulat: ${co2Total.toFixed(3)} kg</span>`;
-    },
-    function (error) {
-      // Gestió de tots els codis d'error
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          resultat.textContent = "Error: Permís denegat per l'usuari.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          resultat.textContent = "Error: La informació de la ubicació no està disponible.";
-          break;
-        case error.TIMEOUT:
-          resultat.textContent = "Error: La petició ha caducat (timeout).";
-          break;
-        default:
-          resultat.textContent = "Error desconegut: " + error.message;
-          break;
-      }
-      // Restablir botons
-      document.getElementById("iniciar").disabled = false;
-      document.getElementById("aturar").disabled = true;
-    }
-  );
-};
+        function interpretarNivell(valor, tipus) {
+            let nivell = "";
+            let color = "";
 
-// Aturar seguiment
-document.getElementById("aturar").onclick = function () {
-  if (idSeguiment !== null) {
-    navigator.geolocation.clearWatch(idSeguiment);
-    idSeguiment = null;
-    resultat.innerHTML += "<br><strong>Seguiment aturat.</strong>";
-    document.getElementById("iniciar").disabled = false;
-    document.getElementById("aturar").disabled = true;
-  }
-};
+            if (tipus === 'no2') {
+                // Classificació NO2
+                if (valor < 10) { nivell = "Baix"; color = "#55a630"; }
+                else if (valor < 30) { nivell = "Moderat"; color = "#ffb703"; }
+                else { nivell = "Alt"; color = "#d90429"; }
+            } else {
+                // Classificació CO
+                if (valor < 1000) { nivell = "Baix"; color = "#55a630"; }
+                else if (valor < 5000) { nivell = "Moderat"; color = "#ffb703"; }
+                else { nivell = "Alt"; color = "#d90429"; }
+            }
+            return `<span style="color: ${color}; font-weight: bold; margin-left: 5px;">(${nivell})</span>`;
+        }
 
-/* ==========================================================================
-   API 1: WEB STORAGE (localStorage - Esborrar)
-   ========================================================================== */
-document.getElementById("esborrar").onclick = function () {
-    localStorage.removeItem("ubicacio");
-    resultat.textContent = "Ubicació esborrada del navegador.";
-};
-</script>
-    <p style="margin-top: 20px;">
-      <a href="INDEX_history.html">Tornar a l'índex</a>
-    </p>
-</div>
+        function mostrarResultats(nom, lat, lon, dades) {
+            // Actualitzar Textos
+            document.getElementById('nom-ciutat').textContent = nom;
+            document.getElementById('val-no2').textContent = dades.nitrogen_dioxide;
+            document.getElementById('nivell-no2').innerHTML = interpretarNivell(dades.nitrogen_dioxide, 'no2');
+            document.getElementById('val-co').textContent = dades.carbon_monoxide;
+            document.getElementById('nivell-co').innerHTML = interpretarNivell(dades.carbon_monoxide, 'co');
+
+            document.getElementById('resultats').style.display = 'block';
+
+            // Moure Mapa i Marcador
+            const pos = ol.proj.fromLonLat([lon, lat]);
+            view.animate({ center: pos, zoom: 10 });
+
+            if (markerLayer) map.removeLayer(markerLayer);
+            const marker = new ol.Feature({ geometry: new ol.geom.Point(pos) });
+            marker.setStyle(new ol.style.Style({
+                image: new ol.style.Circle({ radius: 10, fill: new ol.style.Fill({ color: '#005f73' }), stroke: new ol.style.Stroke({color: 'white', width: 2}) })
+            }));
+            markerLayer = new ol.layer.Vector({ source: new ol.source.Vector({ features: [marker] }) });
+            map.addLayer(markerLayer);
+        }
+
+        window.addEventListener("load", iniciar);
+    </script>
 </body>
 </html>
