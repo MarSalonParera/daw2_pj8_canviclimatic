@@ -8,9 +8,15 @@
 </head>
 <body class="pagina-canvas">
 <div class="contenidor">
-    <h2>Calculadora d'emissions de CO₂</h2>
-    <div style="display: flex; flex-wrap: wrap; gap: 30px; align-items: flex-start;">
-    <div style="flex: 1; min-width: 280px;">
+    <header>
+        <h2>Calculadora d'emissions de CO₂</h2>
+    </header>
+    <main>
+    <p>Selecciona les diferents opcions dels menús desplegables per calcular la teva petjada
+       de carboni diària i veure com afecta visualment al planeta. També pots passar el cursor 
+       per sobre del planeta per netejar el CO₂ acumulat!</p>
+    <div class="layout-calculadora">
+    <div class="col-controls">
     <h3>Transport</h3>
     <select id="transport">
       <option value="0">No faig servir transport</option>
@@ -40,10 +46,14 @@
     <button id="esborrar">Esborrar càlcul</button>
     </div>
     
-    <div style="flex: 0 0 auto;">
+    <div class="col-canvas">
     <canvas id="canvas" width="400" height="450"></canvas>
     </div>
     </div>
+    </main>
+    <footer>
+        <p class="marge-top-20"><a href="INDEX_history.html">Tornar a l'índex</a></p>
+    </footer>
 <script>
 /* ==========================================================================
    API 1: WEB STORAGE (IndexedDB - Configuració)
@@ -255,9 +265,6 @@ canvas.addEventListener("mouseleave", () => {
   estaSobre = false;
 });
 </script>
-    <p style="margin-top: 20px;">
-      <a href="INDEX_history.html">Tornar a l'índex</a>
-    </p>
 </div>
 </body>
 </html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Visual (File API + Worker)</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="pagina-worker">
+    <div class="contenidor">
+        <header>
+            <h1>Simulador: L'efecte de la contaminació</h1>
+            <p>Puja una foto d'un paisatge net i simularem l'efecte de com es veuria amb altes emissions de CO₂.</p>
+        </header>
+
+        <main>
+            <div class="zona-pujada">
+                <h3>Selecciona una imatge del teu ordinador</h3>
+                <!-- API FILE: Element natiu per pujar fitxers. -->
+                <!-- 'accept="image/*"' filtra perquè l'usuari només vegi imatges al cercador -->
+                <input type="file" id="selectorFoto" accept="image/*">
+            </div>
+
+            <div id="zonaResultats" class="zona-resultats">
+                
+                <div class="columna-resultat">
+                    <h4>Original (Net)</h4>
+                    <canvas id="canvasOriginal" class="canvas-visual original"></canvas>
+                </div>
+
+                <div class="columna-resultat">
+                    <h4>Simulació (Contaminat)</h4>
+                    <div class="contenidor-canvas-resultat">
+                        <canvas id="canvasResultat" class="canvas-visual modificat"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer>
+            <p class="marge-top-20"><a href="INDEX_history.html">Tornar a l'índex</a></p>
+        </footer>
+    </div>
+
+    <script>
+        const selectorFoto = document.getElementById('selectorFoto');
+        const canvasOriginal = document.getElementById('canvasOriginal');
+        const canvasResultat = document.getElementById('canvasResultat');
+        const contextOriginal = canvasOriginal.getContext('2d');
+        const contextResultat = canvasResultat.getContext('2d');
+        const zonaResultats = document.getElementById('zonaResultats');
+
+        // Inicialitzem el Worker
+        let workerImatge = null;
+        if (window.Worker) {
+            workerImatge = new Worker('worker.js');
+            
+            // Quan el Worker acaba la feina (retorna la imatge modificada)
+            workerImatge.onmessage = function(e) {
+                const dadesImatgeModificada = e.data;
+                contextResultat.putImageData(dadesImatgeModificada, 0, 0);
+            };
+
+            // Gestió d'errors per garantir robustesa
+            workerImatge.onerror = function(e) {
+                console.error("Error al Web Worker:", e.message, "a la línia", e.lineno);
+            };
+        }
+
+        /* ==========================================================================
+           API 5: FILE API (Llegir Imatge)
+           ========================================================================== */
+        // Escoltem l'esdeveniment 'change', que es dispara quan l'usuari tria un fitxer
+        selectorFoto.addEventListener('change', function(e) {
+            // Accedim al primer arxiu de la llista (files[0])
+            const arxiu = e.target.files[0];
+            if (!arxiu) return;
+
+            // --- VALIDACIÓ AVANÇADA (Tipus i Mida) ---
+            // 1. Validar tipus MIME
+            const tipusPermesos = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!tipusPermesos.includes(arxiu.type)) {
+                alert("Error: Format no suportat. Si us plau, puja una imatge JPG, PNG o WebP.");
+                return;
+            }
+
+            // 2. Validar mida (ex: Màxim 5MB)
+            const midaMaxima = 5 * 1024 * 1024; // 5MB en bytes
+            if (arxiu.size > midaMaxima) {
+                alert("Error: L'arxiu és massa gran. El màxim permès són 5MB.");
+                return;
+            }
+
+            // Mostrem la zona de resultats
+            zonaResultats.style.display = 'flex';
+
+            const lector = new FileReader();
+            
+            lector.onload = function(event) {
+                const imatge = new Image();
+                imatge.onload = function() {
+                    // 1. Dibuixem la imatge original al Canvas
+                    canvasOriginal.width = imatge.width;
+                    canvasOriginal.height = imatge.height;
+                    canvasResultat.width = imatge.width;
+                    canvasResultat.height = imatge.height;
+                    
+                    contextOriginal.drawImage(imatge, 0, 0);
+
+                    // 2. Extraiem les dades dels píxels (ImageData)
+                    const dadesImatge = contextOriginal.getImageData(0, 0, imatge.width, imatge.height);
+
+                    // 3. Enviem les dades al Worker per processar (API 6)
+                    if (workerImatge) {
+                        workerImatge.postMessage(dadesImatge);
+                    }
+                };
+                imatge.src = event.target.result; // DataURL
+            };
+
+            // Llegim l'arxiu com a URL de dades (base64) per poder mostrar-lo
+            lector.readAsDataURL(arxiu);
+        });
+    </script>
+</body>
+</html>

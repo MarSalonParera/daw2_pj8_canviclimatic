@@ -15,20 +15,21 @@
         
         <main>
             <div id="missatge" class="missatge-feedback">Comença a classificar!</div>
-            <button id="reiniciar" style="display: none; margin-bottom: 20px;">🔄 Tornar a jugar</button>
+            <button id="reiniciar">🔄 Tornar a jugar</button>
 
             <!-- Zona d'elements (Draggables) -->
             <div class="contenidor-elements" id="llista-elements">
-                <div class="element-arrossegable" draggable="true" data-tipus="alta">🏭 Fàbrica</div>
-                <div class="element-arrossegable" draggable="true" data-tipus="alta">✈️ Avió</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="alta">🏭 Fàbrica</div>                
+                <div class="element-arrossegable" draggable="true" data-tipus="absorcio">🌱 Plantes</div>
                 <div class="element-arrossegable" draggable="true" data-tipus="alta">🚙 Cotxe Gasolina</div>
                 <div class="element-arrossegable" draggable="true" data-tipus="nula">🚲 Bicicleta</div>
-                <div class="element-arrossegable" draggable="true" data-tipus="nula">☀️ Placa Solar</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="absorcio">🌳 Arbre</div>
                 <div class="element-arrossegable" draggable="true" data-tipus="nula">🌬️ Molí de Vent</div>
                 <div class="element-arrossegable" draggable="true" data-tipus="nula">🚶 Caminar</div>
-                <div class="element-arrossegable" draggable="true" data-tipus="absorcio">🌳 Arbre</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="alta">✈️ Avió</div>
                 <div class="element-arrossegable" draggable="true" data-tipus="absorcio">🪸 Algues marines</div>
-                <div class="element-arrossegable" draggable="true" data-tipus="absorcio">🌱 Plantes</div>
+                <div class="element-arrossegable" draggable="true" data-tipus="nula">☀️ Placa Solar</div>
+                
             </div>
 
             <!-- Zona de contenidors (Dropzones) -->
@@ -40,7 +41,7 @@
         </main>
 
         <footer>
-            <p style="margin-top: 20px;"><a href="INDEX_history.html">Tornar a l'índex</a></p>
+            <p class="marge-top-20"><a href="INDEX_history.html">Tornar a l'índex</a></p>
         </footer>
     </div>
 

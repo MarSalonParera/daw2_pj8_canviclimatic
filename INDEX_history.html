@@ -9,23 +9,25 @@
 </head>
 <body class="pagina-inici">
     <div class="contenidor">
-        <h1>Projecte sobre les emissions de CO₂</h1>
+        <header>
+            <h1>Projecte sobre les emissions de CO₂</h1>
+        </header>
         
-        <!-- Navegació SPA (History API) -->
+        <!-- Navegació en una sola pàgina (History API) -->
         <nav class="navegacio-pestanyes">
             <button onclick="navegar('inici')">Inici</button>
             <button onclick="navegar('intro')">Introducció al projecte</button>
         </nav>
+        <main>
 
         <!-- SECCIÓ 1: MENÚ D'EXERCICIS -->
         <section id="sec-inici" class="contingut-seccio actiu">
             <p>Benvingut al projecte sobre el canvi climàtic. Selecciona una eina:</p>
             <ul>
-                <li><a href="geolocation+webstorage.html">1. Emissions de CO₂ en ruta</a></li>
+                <li><a href="geolocation+webstorage.html">1. Qualitat de l'aire en temps real</a></li>
                 <li><a href="canvas+indexedDB.html">2. Calculadora d'emissions de CO₂</a></li>
-                <li><a href="audio+video.html">3. Vídeo Educatiu</a></li>
+                <li><a href="audio+video.html">3. Vídeo educatiu</a></li>
                 <li><a href="drag_drop.html">4. Classifica elements relatius al CO₂</a></li>
-                <li><a href="worker+file.html">5. Funcionalitats Avançades (Worker + File API)</a></li>
             </ul>
         </section>
 
@@ -35,13 +37,14 @@
             <p>El diòxid de carboni (CO₂) és el principal gas d'efecte hivernacle que contribueix a l'escalfament global. Les activitats humanes, com la crema de combustibles fòssils i la desforestació, han augmentat dràsticament la seva concentració a l'atmosfera.</p>
             <p>Aquest projecte ofereix eines interactives per entendre, calcular i visualitzar l'impacte de les nostres accions diàries en el medi ambient.</p>
         </section>
+        </main>
     </div>
 
     <script>
 
 /* ==========================================================================
-           API 7: HISTORY API (SPA Navigation)
-           ========================================================================== */
+           API 7: HISTORY API (SPA Navigation= Aplicació d'una Sola Pàgina)
+========================================================================== */
         
         function navegar(seccio) {
             // Canviem la URL sense recarregar la pàgina
@@ -62,7 +65,12 @@
 
         // Càrrega inicial
         const params = new URLSearchParams(window.location.search);
-        mostrarSeccio(params.get('seccio') || 'inici');
+        const seccioInicial = params.get('seccio') || 'inici';
+
+        // Ús de replaceState per establir l'estat inicial correctament (vital per al botó Enrere)
+        history.replaceState({ seccio: seccioInicial }, "", "?seccio=" + seccioInicial);
+        
+        mostrarSeccio(seccioInicial);
     </script>
 </body>
 </html>
